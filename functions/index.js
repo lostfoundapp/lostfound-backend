@@ -6,7 +6,7 @@ const app = require('express')()
 
 const FBAuth = require('./util/fbAuth')
 const { getAllPosts, postOnePost } = require('./src/posts')
-const { signup, login, verificationEmail, verificationCode, forgetPassword } = require('./src/users')
+const { signup, login, verificationEmail, verificationCode, forgotPassword } = require('./src/users')
 const { getPoliceStations, getPoliceStation } = require('./src/policeStations')
 
 
@@ -28,7 +28,7 @@ app.post('/signup', signup)
 app.post('/login', login)
 app.post('/verificationEmail', verificationEmail)
 app.get('/verificationCode/:email', verificationCode)
-app.post('/forgetPassword', forgetPassword)
+app.post('/forgotPassword', forgotPassword)
 app.get('/getPoliceStations', getPoliceStations)
 app.get('/getPoliceStation/:id', getPoliceStation)
 

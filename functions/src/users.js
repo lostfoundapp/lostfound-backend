@@ -47,7 +47,7 @@ exports.signup = (req, res) =>{
                 token,
                 userId
             }
-            return db.doc(`/Users/${newUser.phone}`).set(userCredentials)  
+            return db.doc(`/Users/${userId}`).set(userCredentials)  
         })
         .then(() => {
             return res.status(201).json({ message: "Success" })
@@ -66,19 +66,25 @@ exports.login = (req, res) => {
         email: req.body.email,
         password: req.body.password
     }
-
+    let users = {}
     const { valid, errors } = validateLoginData(user)
     if(!valid) return res.status(400).json(errors)
 
     firebase.auth().signInWithEmailAndPassword(user.email, user.password)
     .then(data => {
         //console.log(data.user.uid)
-        return data.user.getIdToken()
-        // return db.collection(`/Users`).doc('token')
-        // .where('userId', '==', data.user.uid)
-        // .set(data.user.getIdToken()).then(() =>{
-        //     return res.status(201).json({message: "Success"})
-        // })
+        //return data.user.getIdToken()
+         return db.collection(`/Users`).doc(data.user.uid)
+         .get()
+         .then((doc) =>{
+             if(doc.exists){
+                users = doc.data()
+                return res.status(201).json({error: false, message: "Logado", users: users})
+             }else {
+                return res.status(404).json({ message: 'User not found' });
+             }
+             
+         })
     })
     .then(token => {
         return res.json({ token })
@@ -86,8 +92,8 @@ exports.login = (req, res) => {
     .catch((err) => {
         if(err.code === 'auth/wrong-password'){
             return res.status(403)
-            .json({ general: 'Wrong credentials try again'})
-        } else return res.status(500).json({ error: err.code })
+            .json({ message: 'Wrong credentials try again'})
+        } else return res.status(500).json({ message: err.code })
     })
 }
 
@@ -148,7 +154,7 @@ exports.verificationCode = (req, res) => {
 }
 
 
-exports.forgetPassword = (req, res) => {
+exports.forgotPassword = (req, res) => {
 
  
         const email = req.body.email
