@@ -20,7 +20,7 @@ const { getPoliceStations, getPoliceStation } = require('./src/policeStations')
 
 //firebase.initializeApp(config)
 
-app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 app.get('/getPosts', getAllPosts)
 app.post('/createPost', FBAuth, postOnePost)
