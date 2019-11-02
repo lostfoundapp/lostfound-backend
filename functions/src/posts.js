@@ -1,4 +1,4 @@
-const format = require('date-format')
+const moment = require('moment-timezone')
 const config = require('../util/config')
 const { admin, db } = require('../util/admin')
 
@@ -7,6 +7,18 @@ const path = require('path')
 const os = require('os')
 const fs = require('fs')
 
+function addPosts (posts, doc, status, dt) {
+    posts.push({
+        post_id: doc.id,
+        image: doc.data().image,
+        userId: doc.data().userId,
+        name: doc.data().name,
+        description: doc.data().description,
+        datetime: doc.data().datetime,
+        statusId: status,
+        police: dt.data()
+    }) 
+}
 
 exports.getAllPosts = (req, res) => {
 
@@ -17,8 +29,7 @@ exports.getAllPosts = (req, res) => {
         .then((data) => {
             let posts = []
             let qtd = data.size
-            let status
-            console.log(req.query.status)
+            let status            
             data.forEach(doc => {
                 return db.collection(`PoliceStations`).doc(`${doc.data().policeStationId}`)
                     .get()
@@ -31,16 +42,14 @@ exports.getAllPosts = (req, res) => {
                             status = "Valido" 
                         else status = "Recusado"       
                          
-                       if(status == req.query.status) posts.push({
-                            post_id: doc.id,
-                            image: doc.data().image,
-                            userId: doc.data().userId,
-                            name: doc.data().name,
-                            description: doc.data().description,
-                            datetime: doc.data().datetime,
-                            statusId: status,
-                            police: dt.data()
-                        })
+                        if(req.query.status){
+                            if(status == req.query.status) 
+                                addPosts(posts,doc, status, dt)
+                        }else{
+                            addPosts(posts, doc, status, dt)
+                        } 
+                                  
+                                
                         if (qtd == 0) return res.json({ posts })
                     })
                     .catch(err => console.error(err))
@@ -48,7 +57,6 @@ exports.getAllPosts = (req, res) => {
         })
         .catch(err => console.error(err))
 }
-
 
 exports.postOnePost = (req, res) => {
 
@@ -84,14 +92,15 @@ exports.postOnePost = (req, res) => {
 
                 imageUrl = image
 
-                //console.log(req.headers)
+                let date = moment.tz(new Date().toISOString(), "America/Bahia").format('DD/MM/YYYY HH:mm:ss')
+                
                 const newPost = {
                     userId: req.user.userId,
                     name: req.user.name,
                     image: imageUrl,
                     description: req.headers.description,
                     policeStationId: req.headers.police_station_id, //coloquei separado assim porque no header não ta pegando letra maiuscula (apagar esse comentario)
-                    datetime: format("dd/MM/yyyy hh:mm:ss", new Date()),
+                    datetime: date,
                     statusId: "1"
                 }
 
