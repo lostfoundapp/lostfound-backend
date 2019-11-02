@@ -17,23 +17,31 @@ exports.getAllPosts = (req, res) => {
         .then((data) => {
             let posts = []
             let qtd = data.size
-
+            let status
+            console.log(req.query.status)
             data.forEach(doc => {
                 return db.collection(`PoliceStations`).doc(`${doc.data().policeStationId}`)
                     .get()
                     .then((dt) => {
                         qtd--
-                        posts.push({
+                        status = doc.data().statusId
+                        if(status == "1")
+                            status = "Aguardando"
+                        else if(status == "2")
+                            status = "Valido" 
+                        else status = "Recusado"       
+                         
+                       if(status == req.query.status) posts.push({
                             post_id: doc.id,
                             image: doc.data().image,
                             userId: doc.data().userId,
                             name: doc.data().name,
                             description: doc.data().description,
                             datetime: doc.data().datetime,
-                            statusId: doc.data().statusId,
+                            statusId: status,
                             police: dt.data()
                         })
-                        if (qtd == 0) return res.json({ "Posts": posts })
+                        if (qtd == 0) return res.json({ posts })
                     })
                     .catch(err => console.error(err))
             })
