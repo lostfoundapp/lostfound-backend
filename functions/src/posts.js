@@ -1,4 +1,4 @@
-const moment = require('moment-timezone')
+const dateTime = require('../util/dateTime')
 const config = require('../util/config')
 const { admin, db } = require('../util/admin')
 
@@ -90,9 +90,7 @@ exports.postOnePost = (req, res) => {
             .then((image) => {
                 image = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${imageFileName}?alt=media`
 
-                imageUrl = image
-
-                let date = moment.tz(new Date().toISOString(), "America/Bahia").format('DD/MM/YYYY HH:mm:ss')
+                imageUrl = image               
                 
                 const newPost = {
                     userId: req.user.userId,
@@ -100,7 +98,7 @@ exports.postOnePost = (req, res) => {
                     image: imageUrl,
                     description: req.headers.description,
                     policeStationId: req.headers.police_station_id, //coloquei separado assim porque no header não ta pegando letra maiuscula (apagar esse comentario)
-                    datetime: date,
+                    datetime: dateTime.newDateTime(),
                     statusId: "1"
                 }
 

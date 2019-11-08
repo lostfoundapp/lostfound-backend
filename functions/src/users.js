@@ -1,7 +1,7 @@
 require('dotenv').config()
 const nodemailer = require('nodemailer')
 const { db } = require('../util/admin')
-const format = require('date-format')
+const dateTime = require('../util/dateTime')
 const config = require('../util/config')
 const firebase = require('firebase')
 firebase.initializeApp(config)
@@ -23,41 +23,45 @@ exports.signup = (req, res) => {
 
     //TODO: Validate data
     let token, userId
-    db.doc(`/Users`)
+    db
+        .collection('Users')
+        .where('phone', '==', newUser.phone)
         .get()
         .then((doc) => {
-            if (doc.exists) {
-                return res.status(400).json({ message: 'this phone is already taken' })
-            } else {
-                return firebase.auth()
-                    .createUserWithEmailAndPassword(newUser.email, newUser.password)
-            }
-        })
-        .then((data) => {
-            userId = data.user.uid
-            return data.user.getIdToken()
-        })
-        .then((idToken) => {
-            token = idToken
-            const userCredentials = {
-                name: newUser.name,
-                email: newUser.email,
-                phone: newUser.phone,
-                datetime: format("dd/MM/yyyy hh:mm:ss", new Date()),
-                token,
-                userId
-            }
-            return db.doc(`/Users/${userId}`).set(userCredentials)
-        })
-        .then(() => {
-            return res.status(201).json({ message: "Success" })
+            if (!doc.empty) {                
+                return res.status(400).json({ message: 'This phone is already in use'})                
+            }else{
+                return firebase.auth().createUserWithEmailAndPassword(newUser.email, newUser.password)
+                .then((data) => {
+                    userId = data.user.uid
+                    return data.user.getIdToken()
+                })
+                .then((idToken) => {
+                    token = idToken
+                    const userCredentials = {
+                        name: newUser.name,
+                        email: newUser.email,
+                        phone: newUser.phone,
+                        datetime: dateTime.newDateTime(),
+                        token,
+                        userId
+                    }
+                    return db.doc(`/Users/${userId}`).set(userCredentials)
+                })
+                .then(() => {
+                    return res.status(201).json({ message: "Success" })
+                })
+                .catch((err) => {
+                    if (err.code === 'auth/email-already-in-use') {
+                        return res.status(400).json({ message: 'Email is already in use' })
+                    } else {
+                        console.error(err)
+                    }
+                })
+            }       
         })
         .catch((err) => {
-            if (err.code === 'auth/email-already-in-use') {
-                return res.status(400).json({ message: 'Email is already in use' })
-            } else {
-                return res.status(500).json({ message: err.code })
-            }
+            return res.status(500).json({ error: err.code })
         })
 }
 
@@ -138,7 +142,7 @@ exports.verificationEmail = (req, res) => {
                     const userVerification = {
                         email: newVerification.email,
                         code: newVerification.code,
-                        datetime: format("dd/MM/yyyy hh:mm:ss", new Date())
+                        datetime: dateTime.newDateTime()
                     }
                     return db.doc(`/Verification/${userVerification.email}`).set(userVerification)
 
